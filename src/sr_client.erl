@@ -35,7 +35,6 @@ start_link(Caller, WSS) ->
 
 -spec send(pid(), binary()) -> ok.
 send(Pid, Payload) ->
-    error_logger:info_msg("slacker-rtm: send=~p", [Payload]),
     websocket_client:cast(Pid, {text, Payload}).
 
 %%%============================================================================
@@ -48,24 +47,18 @@ websocket_handle({text, JSON}, _ConnState, #state{caller_pid = Caller} = State) 
     Map = parse_json(JSON),
     case maps:get(<<"type">>, Map) of
         <<"hello">> ->
-            error_logger:info_msg("slacker-rtm: connected=~p", [Map]),
             Caller ! connected,
             {ok, State#state{connected = true}};
         Event ->
-            error_logger:info_msg("slacker-rtm: event=~p, payload=~p",
-                                  [Event, Map]),
             Caller ! {Event, Map},
             {ok, State}
     end;
 websocket_handle({ping, _Msg}, _ConnState, State) ->
-    error_logger:info_msg("slacker-rtm: ping", []),
     {reply, {pong, <<>>}, State};
-websocket_handle(Msg, _ConnState, State) ->
-    error_logger:info_msg("slacker-rtm: handle=~p", [Msg]),
+websocket_handle(_Msg, _ConnState, State) ->
     {ok, State}.
 
-websocket_info(Info, _ConnState, State) ->
-    error_logger:info_msg("slacker-rtm: info=~p", [Info]),
+websocket_info(_Info, _ConnState, State) ->
     {reply, {text, <<>>}, State}.
 
 websocket_terminate(_Reason, _ConnState, _State) ->
